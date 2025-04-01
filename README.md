@@ -1,0 +1,2 @@
+# nxm
+Nix Environment Manager

@@ -1,0 +1,7 @@
+{
+  "theme": "gruvbox-dark",
+  "desktopEnvironment": "gnome",
+  "profile": "",
+  "hostname": "",
+  "enabledModules": ["study"]
+}

@@ -13,6 +13,7 @@ import (
 
 type Config struct {
 	Hostname string `json:"hostname"`
+	Username string `json:"username"`
 	FlakeDir string `json:"flakeDir" env:"FLAKE_DIR"`
 	Profile string `json:"profile" env:"PROFILE"` 		// For later
 	DesktopEnvironment string `json:"desktopEnvironment" env:"DESKTOP_ENVIRONMENT"`
@@ -40,6 +41,7 @@ func setup() string {
 				log.Fatal(err)
 			}
 			var config Config
+			config.Username = os.Getenv("USER")
 			if config.Hostname, err = os.Hostname(); err != nil {
 				log.Fatal(err)
 			}
@@ -122,7 +124,7 @@ func runCmd(cmd *exec.Cmd) {
 
 func userSwitchConfig(config *Config) {
 
-	cmd := exec.Command("home-manager", "switch", "--flake", config.FlakeDir + "#robert", "--impure")
+	cmd := exec.Command("home-manager", "switch", "--flake", config.FlakeDir + "#" + config.Username, "--impure")
 	runCmd(cmd)
 }
 

@@ -134,14 +134,20 @@ func systemSwitchConfig(config *Config) {
 	runCmd(cmd)
 }
 
-func switchConfig(config *Config) {
+func switchConfig(config *Config, systemSwitch ...bool) {
+
+	isSystemSwitch := false
+	if len(systemSwitch) > 0 {
+		fmt.Println(systemSwitch[0])
+		isSystemSwitch = systemSwitch[0]
+	}
 
 	fmt.Println("Setting Env Vars...")
 	setEnvVars(*config)
 	fmt.Println("Done!")
 
-	if len(os.Args) > 2 {
-		if strings.ToLower(os.Args[2]) == "all" {
+	if len(os.Args) > 2 || isSystemSwitch {
+		if strings.ToLower(os.Args[2]) == "all" || isSystemSwitch {
 			fmt.Println("Switching system configuration")
 			systemSwitchConfig(config)
 		}
@@ -155,7 +161,7 @@ func switchDesktop(config *Config) {
 		log.Fatal("Please specify a desktop environment to switch to.")
 	}
 	config.DesktopEnvironment = os.Args[2]
-	userSwitchConfig(config)
+	switchConfig(config, true)
 	
 }
 

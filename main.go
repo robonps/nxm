@@ -128,7 +128,7 @@ func userSwitchConfig(config *Config) {
 
 func systemSwitchConfig(config *Config) {
 	hostname := strings.ToLower(config.Hostname)
-	cmd := exec.Command("nixos-rebuild", "switch", "--flake", config.FlakeDir + "#" + hostname, "--impure")
+	cmd := exec.Command("sudo", "nixos-rebuild", "switch", "--flake", config.FlakeDir + "#" + hostname, "--impure")
 	runCmd(cmd)
 }
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"reflect"
+	"strings"
 )
 
 type Config struct {
@@ -109,27 +109,43 @@ func setEnvVars(config Config) {
     }
 }
 
+func runCmd(cmd *exec.Cmd) {
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	err := cmd.Run()
+	
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func userSwitchConfig(config *Config) {
+
+	cmd := exec.Command("home-manager", "switch", "--flake", config.FlakeDir + "#robert", "--impure")
+	runCmd(cmd)
+}
+
+func systemSwitchConfig(config *Config) {
+	hostname := strings.ToLower(config.Hostname)
+	cmd := exec.Command("nixos-rebuild", "switch", "--flake", config.FlakeDir + "#" + hostname, "--impure")
+	runCmd(cmd)
+}
+
 func switchConfig(config *Config) {
 
 	fmt.Println("Setting Env Vars...")
 	setEnvVars(*config)
 	fmt.Println("Done!")
 
+	if len(os.Args) > 2 {
+		if strings.ToLower(os.Args[2]) == "all" {
+			fmt.Println("Switching system configuration")
+			systemSwitchConfig(config)
+		}
+	}
 	fmt.Println("Switching to new home-manager config")
-	cmd := exec.Command("home-manager", "switch", "--flake", config.FlakeDir + "#robert", "--impure")
-
-	out, err := cmd.StdoutPipe()
-	cmd.Stderr = cmd.Stdout
-	cmd.Start()
-	if err != nil {
-		// if there was any error, print it here
-		log.Fatal(err)
-	}
-	outScanner := bufio.NewScanner(out)
-	for outScanner.Scan() {
-		m := outScanner.Text()
-		fmt.Println(m)
-	}
+	userSwitchConfig(config)
 }
 
 func switchDesktop(config *Config) {
@@ -137,7 +153,7 @@ func switchDesktop(config *Config) {
 		log.Fatal("Please specify a desktop environment to switch to.")
 	}
 	config.DesktopEnvironment = os.Args[2]
-	switchConfig(config)
+	userSwitchConfig(config)
 	
 }
 

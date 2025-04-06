@@ -7,9 +7,12 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"reflect"
 	"strings"
 )
+
+const ENVIRONMENTDIR = "/home/modules/environments"
 
 type Config struct {
 	Hostname string `json:"hostname"`
@@ -168,6 +171,42 @@ func updateFlake(config *Config) {
 	switchConfig(config, true)
 }
 
+func modulesList(config *Config) {
+	files, err := filepath.Glob(config.FlakeDir + ENVIRONMENTDIR + "/*.nix")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	moduleList := "================\n  Modules List\n================\n\nModule\t\tStatus\n------------------------"
+
+	for _, file := range files {
+		for _, module := range config.EnabledModules {
+			if filepath.Base(file) == module {
+				fmt.Println(file + "found")
+				module := strings.TrimSuffix(filepath.Base(file), ".nix")
+				moduleList += "\n" + strings.ToUpper(module[:1]) + module[1:] + "\t\tEnabled"
+				continue
+			}
+		}
+		module := strings.TrimSuffix(filepath.Base(file), ".nix")
+		moduleList += "\n" + strings.ToUpper(module[:1]) + module[1:] + "\t\tDisabled"
+	}
+
+	fmt.Println(moduleList)
+}
+
+func modules(config *Config) {
+	if len(os.Args) < 3 {
+		// TODO: Show info about commands with module prefix
+	}
+
+	switch os.Args[2] {
+		case "list":
+		modulesList(config)
+			
+	}
+}
+
 func main() {
 	sessionDir := setup()
 	var config Config
@@ -180,6 +219,8 @@ func main() {
 				switchConfig(&config)
 			case "update":
 				updateFlake(&config)
+			case "module":
+				modules(&config)
 			case "desktop":
 				switchDesktop(&config)
 

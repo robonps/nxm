@@ -209,28 +209,35 @@ func modulesList(config *Config) {
 	fmt.Println(moduleList)
 }
 
-func enableModules(config *Config, sessionDir string) {
+func checkModules(files []string) []string {
 	if len(os.Args) < 4 {
 		fmt.Println("Please specify one or more environment modules to enable. See:\nnxm module list\nFor a list of modules.")
 		os.Exit(1)
 	}
-	files := getModules(config)
-	var modulesEnable []string
+	var modulesChecked []string
 
 	ArgumentLoop:
 	for _, argumentModule := range os.Args[3:] {
 		for _, module := range files {
 			if strings.ToLower(argumentModule) + ".nix" == filepath.Base(module) {
-				modulesEnable = append(modulesEnable, filepath.Base(module))
+				modulesChecked = append(modulesChecked, filepath.Base(module))
 				continue ArgumentLoop
 			}
 		}
 		log.Fatal("\"" + argumentModule + "\" Does not exist")
 	}
 
-	if len(os.Args) - 3 != len(modulesEnable) {
+	if len(os.Args) - 3 != len(modulesChecked) {
 		log.Fatal("One or more of the module names are invalid")
 	}
+
+	return modulesChecked
+}
+
+// TODO: Add enable all command.
+func enableModules(config *Config, sessionDir string) {
+	files := getModules(config)
+	modulesEnable := checkModules(files)
 
 	fmt.Println("Enabling the following modules:")
 	fmt.Println(modulesEnable)
@@ -250,6 +257,33 @@ func enableModules(config *Config, sessionDir string) {
 	userSwitchConfig(config)
 }
 
+
+// TODO: Add disable all command.
+func disableModule(config *Config, sessionDir string){
+	files := getModules(config)
+	modulesDisable := checkModules(files)
+
+	fmt.Println("Disabling the following modules:")
+	fmt.Println(modulesDisable)
+
+	// Check to make sure they aren't already disabled.
+	ModuleLoop:
+	for _, module := range modulesDisable {
+		for i, enabledModule := range config.EnabledModules {
+			if enabledModule == module {
+				config.EnabledModules = append(config.EnabledModules[:i], config.EnabledModules[i+1:]...)
+				continue ModuleLoop
+			} else {
+				fmt.Println(module + " already disabled, skipping...")
+			}
+		}
+	}
+
+	writeJson(*config, sessionDir)
+	fmt.Println("\n\nReloading home-manager...")
+	userSwitchConfig(config)
+}
+
 func modules(config *Config, sessionDir string) {
 	if len(os.Args) < 3 {
 		// TODO: Show info about commands with module prefix
@@ -259,10 +293,10 @@ func modules(config *Config, sessionDir string) {
 		case "list":
 			modulesList(config)
 		case "enable":
-			// TODO: Enable module
 			enableModules(config, sessionDir)
 		case "disable":
 			// TODO: Disable modules
+			disableModule(config, sessionDir)
 	}
 }
 

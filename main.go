@@ -24,6 +24,15 @@ type Config struct {
 	EnabledModules []string `json:"enabledModules" env:"ENABLED_MODULES"`
 }
 
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
 func setup() string {
 	userDir, err := os.UserConfigDir(); 
 	if err != nil {
@@ -171,39 +180,86 @@ func updateFlake(config *Config) {
 	switchConfig(config, true)
 }
 
-func modulesList(config *Config) {
+func getModules(config *Config) []string {
 	files, err := filepath.Glob(config.FlakeDir + ENVIRONMENTDIR + "/*.nix")
 	if err != nil {
 		log.Fatal(err)
 	}
+	return files
+}
+func modulesList(config *Config) {
+
+	files := getModules(config)
 
 	moduleList := "================\n  Modules List\n================\n\nModule\t\tStatus\n------------------------"
 
+	FileLoop:
 	for _, file := range files {
 		for _, module := range config.EnabledModules {
 			if filepath.Base(file) == module {
-				fmt.Println(file + "found")
-				module := strings.TrimSuffix(filepath.Base(file), ".nix")
-				moduleList += "\n" + strings.ToUpper(module[:1]) + module[1:] + "\t\tEnabled"
-				continue
+				fileModule := strings.TrimSuffix(filepath.Base(file), ".nix")
+				moduleList += "\n" + strings.ToUpper(fileModule[:1]) + fileModule[1:] + "\t\tEnabled"
+				continue FileLoop
 			}
 		}
-		module := strings.TrimSuffix(filepath.Base(file), ".nix")
-		moduleList += "\n" + strings.ToUpper(module[:1]) + module[1:] + "\t\tDisabled"
+		fileModule := strings.TrimSuffix(filepath.Base(file), ".nix")
+		moduleList += "\n" + strings.ToUpper(fileModule[:1]) + fileModule[1:] + "\t\tDisabled"
 	}
 
 	fmt.Println(moduleList)
 }
 
-func modules(config *Config) {
+func enableModules(config *Config, sessionDir string) {
+	if len(os.Args) < 4 {
+		fmt.Println("Please specify one or more environment modules to enable. See:\nnxm module list\nFor a list of modules.")
+		os.Exit(1)
+	}
+	files := getModules(config)
+	var modulesEnable []string
+
+	ArgumentLoop:
+	for _, argumentModule := range os.Args[3:] {
+		for _, module := range files {
+			if strings.ToLower(argumentModule) + ".nix" == filepath.Base(module) {
+				modulesEnable = append(modulesEnable, filepath.Base(module))
+				continue ArgumentLoop
+			}
+		}
+		log.Fatal("\"" + argumentModule + "\" Does not exist")
+	}
+
+	if len(os.Args) - 3 != len(modulesEnable) {
+		log.Fatal("One or more of the module names are invalid")
+	}
+
+	fmt.Println("Enabling the following modules:")
+	fmt.Println(modulesEnable)
+
+	// Check to make sure they aren't already enabled.
+	for _, module := range modulesEnable {
+		if !contains(config.EnabledModules, module) {
+			config.EnabledModules = append(config.EnabledModules, module)
+		} else {
+			fmt.Println(module + " already enabled, skipping...")
+		}
+	}
+
+	writeJson(*config, sessionDir)
+}
+
+func modules(config *Config, sessionDir string) {
 	if len(os.Args) < 3 {
 		// TODO: Show info about commands with module prefix
 	}
 
 	switch os.Args[2] {
 		case "list":
-		modulesList(config)
-			
+			modulesList(config)
+		case "enable":
+			// TODO: Enable module
+			enableModules(config, sessionDir)
+		case "disable":
+			// TODO: Disable modules
 	}
 }
 
@@ -220,7 +276,7 @@ func main() {
 			case "update":
 				updateFlake(&config)
 			case "module":
-				modules(&config)
+				modules(&config, sessionDir)
 			case "desktop":
 				switchDesktop(&config)
 

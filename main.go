@@ -81,17 +81,6 @@ func writeJson(config Config, file string) {
 	}
 }
 
-func read() int {
-	if len(os.Args) < 3 {
-		log.Fatal("Please give a filename")
-	}
-	
-	var config Config
-	readJson(&config, os.Args[2])
-	fmt.Println(config)
-	return 0
-}
-
 func help() {
 	fmt.Println("Help NXM:\nUsage\tnxm arg")
 }
@@ -146,12 +135,18 @@ func switchConfig(config *Config, systemSwitch ...bool) {
 	setEnvVars(*config)
 	fmt.Println("Done!")
 
-	if len(os.Args) > 2 || isSystemSwitch {
-		if strings.ToLower(os.Args[2]) == "all" || isSystemSwitch {
-			fmt.Println("Switching system configuration")
+	if len(os.Args) > 2 {
+		if strings.ToLower(os.Args[2]) == "all" {
+			fmt.Println("Switching System Configuration")
 			systemSwitchConfig(config)
 		}
 	}
+
+	if isSystemSwitch {
+		fmt.Println("Switching System Config")
+		systemSwitchConfig(config)
+	}
+
 	fmt.Println("Switching to new home-manager config")
 	userSwitchConfig(config)
 }
@@ -165,18 +160,26 @@ func switchDesktop(config *Config) {
 	
 }
 
+func updateFlake(config *Config) {
+	fmt.Println("Updating Flake")
+	cmd := exec.Command("nix", "flake", "update", "--flake", config.FlakeDir)
+	runCmd(cmd)
+	fmt.Println("Done!")
+	switchConfig(config, true)
+}
+
 func main() {
 	sessionDir := setup()
 	var config Config
 	readJson(&config, sessionDir)
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
-			case "read":
-				read()
 			case "help":
 				help()
 			case "switch":
 				switchConfig(&config)
+			case "update":
+				updateFlake(&config)
 			case "desktop":
 				switchDesktop(&config)
 

@@ -200,6 +200,8 @@ func modulesList(config *Config) {
 				fileModule := strings.TrimSuffix(filepath.Base(file), ".nix")
 				moduleList += "\n" + strings.ToUpper(fileModule[:1]) + fileModule[1:] + "\t\tEnabled"
 				continue FileLoop
+			} else if filepath.Base(file) == "default.nix" { 			// Man, I need to fix this properly
+				continue FileLoop
 			}
 		}
 		fileModule := strings.TrimSuffix(filepath.Base(file), ".nix")

@@ -252,7 +252,8 @@ func enableModules(config *Config, sessionDir string) {
 	}
 
 	writeJson(*config, sessionDir)
-
+	fmt.Println("Setting Env Vars...")
+	setEnvVars(*config)
 	fmt.Println("\n\nReloading home-manager...")
 	userSwitchConfig(config)
 }
@@ -280,6 +281,8 @@ func disableModule(config *Config, sessionDir string){
 	}
 
 	writeJson(*config, sessionDir)
+	fmt.Println("Setting Env Vars...")
+	setEnvVars(*config)
 	fmt.Println("\n\nReloading home-manager...")
 	userSwitchConfig(config)
 }

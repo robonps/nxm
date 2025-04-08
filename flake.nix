@@ -16,7 +16,7 @@
         packages = {
           default = pkgs.buildGoModule {
             pname = "nxm";
-            version = "0.1";
+            version = "0.5";
             src = ./.;
             vendorHash = null;
             inherit go;

@@ -195,12 +195,15 @@ func modulesList(config *Config) {
 
 	FileLoop:
 	for _, file := range files {
+		
+		if filepath.Base(file) == "default.nix" { 			// Man, I really need to fix this.
+			continue FileLoop
+		}
+
 		for _, module := range config.EnabledModules {
 			if filepath.Base(file) == module {
 				fileModule := strings.TrimSuffix(filepath.Base(file), ".nix")
 				moduleList += "\n" + strings.ToUpper(fileModule[:1]) + fileModule[1:] + "\t\tEnabled"
-				continue FileLoop
-			} else if filepath.Base(file) == "default.nix" { 			// Man, I need to fix this properly
 				continue FileLoop
 			}
 		}
